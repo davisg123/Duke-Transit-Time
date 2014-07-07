@@ -5,7 +5,6 @@ var events;
 var output = [];
 
 function handleFileSelect(evt) {
-    alert("file selected");
     var files = evt.target.files; // FileList object
     var file = files[0];
     if (file.name.split('.').pop() != "ics"){
@@ -36,23 +35,11 @@ function handleFileSelect(evt) {
                 //sort events by start date
                 events.sort(compareEvent("DTSTART"));
                 //now the fun begins
-                var refDay = 0;
                 output.push('<ul>');
                 for (var i = 0; i < events.length; i++) {
-                	output.push('<li>',events[i].SUMMARY,' - ', events[i].LOCATION, '</li>');
-                	//keyword is the first word of the location
-                    var keyword = events[i].LOCATION.split(" ")[0];
-                    var Building = Parse.Object.extend("Building");
-					var query = new Parse.Query(Building);
-					query.equalTo("keyword",keyword);
-					query.find({
-					  success: function(results) {
-                        //success
-					  },
-					  error: function(error) {
-					    //issue
-					  }
-					});
+                	output.push('<li>',events[i].SUMMARY,' - <strong>', events[i].LOCATION, '</strong> ',events[i].DTSTART.toLocaleTimeString(navigator.language, {hour: '2-digit', minute:'2-digit'}),' - ',events[i].DTEND.toLocaleTimeString(navigator.language, {hour: '2-digit', minute:'2-digit'}),'</li>');
+                	output.push('<span id='+i+'></span>');
+                    setGroup(i);
                 }
                 output.push('<ul>');
                 updateDisplay();
@@ -62,6 +49,27 @@ function handleFileSelect(evt) {
     reader.readAsText(file);
 
 
+}
+
+function setGroup(idx){
+    //keyword is the first word of the location
+    var keyword = events[idx].LOCATION.split(" ")[0];
+    var Building = Parse.Object.extend("Building");
+    var query = new Parse.Query(Building);
+    query.equalTo("keyword",keyword);
+    query.find({
+      success: function(results) {
+        events[idx].group = results[0].get("group");
+        //set transit time if needed
+        if(idx != 0 && events[idx].DTSTART.getDay() == events[idx-1].DTSTART.getDay()){
+            var time = timeInTransit(events[idx].group,events[idx-1].group);
+            $("#"+(idx-1)).append("<ul>Travel time = "+time+" minutes</ul>")
+        }
+      },
+      error: function(error) {
+        //issue
+      }
+    });
 }
 
 function updateDisplay(){
