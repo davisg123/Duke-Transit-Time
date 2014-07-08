@@ -3,6 +3,7 @@ Parse.initialize("89Aw77ZkLf3hvZqrcGDTXqZMokAdIlqTmY14z5XR", "gdVSvclZRBkad6tQrH
 //global event list
 var events;
 var output = [];
+var counter;
 
 function handleFileSelect(evt) {
     var files = evt.target.files; // FileList object
@@ -36,6 +37,7 @@ function handleFileSelect(evt) {
                 events.sort(compareEvent("DTSTART"));
                 //now the fun begins
                 output.push('<ul>');
+                counter = events.length;
                 for (var i = 0; i < events.length; i++) {
                 	output.push('<li>',events[i].SUMMARY,' - <strong>', events[i].LOCATION, '</strong> ',events[i].DTSTART.toLocaleTimeString(navigator.language, {hour: '2-digit', minute:'2-digit'}),' - ',events[i].DTEND.toLocaleTimeString(navigator.language, {hour: '2-digit', minute:'2-digit'}),'</li>');
                 	output.push('<span id='+i+'></span>');
@@ -60,16 +62,36 @@ function setGroup(idx){
     query.find({
       success: function(results) {
         events[idx].group = results[0].get("group");
-        //set transit time if needed
-        if(idx != 0 && events[idx].DTSTART.getDay() == events[idx-1].DTSTART.getDay()){
-            var time = timeInTransit(events[idx].group,events[idx-1].group);
-            $("#"+(idx-1)).append("<ul>Travel time = "+time+" minutes</ul>")
+        events[idx].building = results[0].get("name");
+        counter--;
+        if (counter == 0){
+            //done, process
+            processTimes();
         }
       },
       error: function(error) {
         //issue
       }
     });
+}
+
+function processTimes(){
+    for (var idx = 0; idx < events.length; idx++) {
+        if(idx != 0 && events[idx].DTSTART.getDay() == events[idx-1].DTSTART.getDay()){
+            var time = timeInTransit(events[idx].group,events[idx-1].group);
+            var bld1 = events[idx-1].building;
+            var bld2 = events[idx].building;
+            if (time == 0){
+                $("#"+(idx-1)).append("<ul>Travel time unknown.</ul>");
+            }
+            else{
+                $("#"+(idx-1)).append("<ul>Travel time from "+bld1+" to "+bld2+" = <strong>"+time+" minutes</strong></ul>");
+            }
+        }
+        else{
+            $("#"+(idx-1)).append("<hr>");
+        }
+    };
 }
 
 function updateDisplay(){
@@ -110,6 +132,8 @@ function timeInTransit(from,to){
 		case '4 5':
 		case '5 4':
 			return 10;
+        default:
+            return 0;
 	}
 }
 
