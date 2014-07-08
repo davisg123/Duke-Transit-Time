@@ -6,6 +6,7 @@ var output = [];
 var counter;
 
 function handleFileSelect(evt) {
+    $("#content").empty();
     var files = evt.target.files; // FileList object
     var file = files[0];
     if (file.name.split('.').pop() != "ics"){
