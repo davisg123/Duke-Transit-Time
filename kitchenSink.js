@@ -133,6 +133,13 @@ function timeInTransit(from,to){
 		case '4 5':
 		case '5 4':
 			return 10;
+        //eww...
+        case '1 1':
+        case '2 2':
+        case '3 3':
+        case '4 4':
+        case '5 5':
+            return 5;
         default:
             return 0;
 	}
